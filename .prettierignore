@@ -1,0 +1,23 @@
+# Build output
+.next/
+out/
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Env and config
+.env
+.env.*
+.vercel/
+
+# Coverage and test artifacts
+coverage/
+cypress/
+playwright-report/
+test-results/
+
+# Misc
+.DS_Store
+Thumbs.db
