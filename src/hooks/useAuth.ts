@@ -55,7 +55,7 @@ export function useRegister() {
         setError(data?.error || 'Falha no cadastro');
         return { ok: false, data };
       }
-      router.push('/login');
+
       return { ok: true, data };
     } catch (e) {
       setError('Erro de rede');

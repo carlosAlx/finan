@@ -17,7 +17,8 @@ export default function CadastroPage() {
     password: '',
     confirmPassword: '',
   });
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string>("");
+  const [messageType, setMessageType] = useState<"success" | "error" | null>(null);
   const { register, loading, error } = useRegister();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -74,23 +75,41 @@ export default function CadastroPage() {
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLocalError(null);
+    setMessage("");
+    setMessageType(null);
     const v = validate();
     if (v) {
-      setLocalError(v);
+      setMessage(v);
+      setMessageType("error");
       return;
     }
-    await register({
+    const result = await register({
       name: formData.name || undefined,
       email: formData.email,
       password: formData.password,
     });
+    if (!result?.ok) {
+      setMessage((result as any)?.data?.error || error || 'Falha no cadastro');
+      setMessageType("error");
+      return;
+    }
+    setMessage("Cadastro realizado com sucesso. Redirecionando para login...");
+    setMessageType("success");
+    setTimeout(() => router.push('/login'), 1200);
   };
 
   return (
     <div className={styles.container_cadastro}>
       <div className={styles.container_form}>
       <h1>Cadastro</h1>
+      {message && (
+        <div
+          aria-live="polite"
+          className={`${styles.message} ${messageType === 'error' ? styles.message_error : styles.message_success}`}
+        >
+          {message}
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="stack" noValidate>
         <FormField id="name" label="Nome:" error={nameError}
         >

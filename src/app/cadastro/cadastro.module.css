@@ -29,6 +29,24 @@
   margin-bottom: 24px;
   color: var(--foreground);
 }
+.message{
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.message_success{
+  background: var(--secondary);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.message_error{
+  background: var(--secondary);
+  color: var(--error);
+  border-color: var(--error);
+}
 .input_group {
   display: flex;
   flex-direction: column;
