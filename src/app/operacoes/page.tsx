@@ -6,6 +6,7 @@ import Input from "@/components/Input/Input";
 import LogoutButton from "@/components/LogoutButton";
 import { useReducer } from "react";
 import styles from './operacoes.module.css';
+import Link from "next/link";
 
 type State = {
   depositAmount: string;
@@ -13,7 +14,9 @@ type State = {
   transferAmount: string;
   reversalId: string;
   message: string;
+  messageType: "success" | "error" | null;
   loading: boolean;
+  activeTab: "deposit" | "transfer" | "reversal";
   errors: {
     deposit?: string;
     transfer?: string;
@@ -27,9 +30,10 @@ type Action =
   | { type: "SET_FIELD"; field: FieldKey; value: string }
   | { type: "SET_ERROR"; section: "deposit" | "transfer" | "reversal"; error: string }
   | { type: "CLEAR_ERROR"; section: "deposit" | "transfer" | "reversal" }
-  | { type: "SET_MESSAGE"; message: string }
+  | { type: "SET_MESSAGE"; message: string; kind: "success" | "error" | null }
   | { type: "SET_LOADING"; loading: boolean }
-  | { type: "RESET_SECTION"; section: "deposit" | "transfer" | "reversal" };
+  | { type: "RESET_SECTION"; section: "deposit" | "transfer" | "reversal" }
+  | { type: "SET_TAB"; tab: "deposit" | "transfer" | "reversal" };
 
 const initialState: State = {
   depositAmount: "",
@@ -37,7 +41,9 @@ const initialState: State = {
   transferAmount: "",
   reversalId: "",
   message: "",
+  messageType: null,
   loading: false,
+  activeTab: "deposit",
   errors: {},
 };
 
@@ -51,7 +57,7 @@ function reducer(state: State, action: Action): State {
       const { [action.section]: _removed, ...rest } = state.errors;
       return { ...state, errors: rest };
     case "SET_MESSAGE":
-      return { ...state, message: action.message };
+      return { ...state, message: action.message, messageType: action.kind };
     case "SET_LOADING":
       return { ...state, loading: action.loading };
     case "RESET_SECTION":
@@ -65,6 +71,8 @@ function reducer(state: State, action: Action): State {
         return { ...state, reversalId: "" };
       }
       return state;
+    case "SET_TAB":
+      return { ...state, activeTab: action.tab };
     default:
       return state;
   }
@@ -83,10 +91,12 @@ export default function OperacoesPage() {
     return Number.isInteger(n) && n > 0;
   };
 
+  const isErrorMessage = state.messageType === "error";
+
   async function handleDeposit(e: React.FormEvent) {
     e.preventDefault();
     dispatch({ type: "SET_LOADING", loading: true });
-    dispatch({ type: "SET_MESSAGE", message: "" });
+    dispatch({ type: "SET_MESSAGE", message: "", kind: null });
     dispatch({ type: "CLEAR_ERROR", section: "deposit" });
     try {
       if (!isValidMoney(state.depositAmount)) {
@@ -101,10 +111,10 @@ export default function OperacoesPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha no depósito");
-      dispatch({ type: "SET_MESSAGE", message: `Depósito OK. Novo saldo: ${(data.balanceCents ?? 0) / 100}` });
+      dispatch({ type: "SET_MESSAGE", message: `Depósito OK. Novo saldo: ${(data.balanceCents ?? 0) / 100}`, kind: "success" });
       dispatch({ type: "RESET_SECTION", section: "deposit" });
     } catch (err: any) {
-      dispatch({ type: "SET_MESSAGE", message: err.message || "Erro inesperado no depósito" });
+      dispatch({ type: "SET_MESSAGE", message: err.message || "Erro inesperado no depósito", kind: "error" });
     } finally {
       dispatch({ type: "SET_LOADING", loading: false });
     }
@@ -113,7 +123,7 @@ export default function OperacoesPage() {
   async function handleTransfer(e: React.FormEvent) {
     e.preventDefault();
     dispatch({ type: "SET_LOADING", loading: true });
-    dispatch({ type: "SET_MESSAGE", message: "" });
+    dispatch({ type: "SET_MESSAGE", message: "", kind: null });
     dispatch({ type: "CLEAR_ERROR", section: "transfer" });
     try {
       if (!emailRegex.test(state.transferEmail)) {
@@ -132,10 +142,10 @@ export default function OperacoesPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha na transferência");
-      dispatch({ type: "SET_MESSAGE", message: `Transferência OK. Novo saldo: ${(data.balanceCents ?? 0) / 100}` });
+      dispatch({ type: "SET_MESSAGE", message: `Transferência OK. Novo saldo: ${(data.balanceCents ?? 0) / 100}`, kind: "success" });
       dispatch({ type: "RESET_SECTION", section: "transfer" });
     } catch (err: any) {
-      dispatch({ type: "SET_MESSAGE", message: err.message || "Erro inesperado na transferência" });
+      dispatch({ type: "SET_MESSAGE", message: err.message || "Erro inesperado na transferência", kind: "error" });
     } finally {
       dispatch({ type: "SET_LOADING", loading: false });
     }
@@ -144,7 +154,7 @@ export default function OperacoesPage() {
   async function handleReversal(e: React.FormEvent) {
     e.preventDefault();
     dispatch({ type: "SET_LOADING", loading: true });
-    dispatch({ type: "SET_MESSAGE", message: "" });
+    dispatch({ type: "SET_MESSAGE", message: "", kind: null });
     dispatch({ type: "CLEAR_ERROR", section: "reversal" });
     try {
       if (!isValidId(state.reversalId)) {
@@ -159,10 +169,10 @@ export default function OperacoesPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha na reversão");
-      dispatch({ type: "SET_MESSAGE", message: "Operação revertida com sucesso." });
+      dispatch({ type: "SET_MESSAGE", message: "Operação revertida com sucesso.", kind: "success" });
       dispatch({ type: "RESET_SECTION", section: "reversal" });
     } catch (err: any) {
-      dispatch({ type: "SET_MESSAGE", message: err.message || "Erro inesperado na reversão" });
+      dispatch({ type: "SET_MESSAGE", message: err.message || "Erro inesperado na reversão", kind: "error" });
     } finally {
       dispatch({ type: "SET_LOADING", loading: false });
     }
@@ -170,11 +180,54 @@ export default function OperacoesPage() {
 
   return (
     <div className={styles.container_operaceos}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className={styles.header}>
         <h1>Operações</h1>
         <LogoutButton />
       </div>
       <p>Execute depósitos, transferências e reversões.</p>
+      <div className={styles.toolbar}>
+        <Link href="/operacoes/lista">
+          <Button type="button">Ver histórico</Button>
+        </Link>
+      </div>
+      {state.message && (
+        <div
+          aria-live="polite"
+          className={`${styles.message} ${isErrorMessage ? styles.message_error : styles.message_success}`}
+        >
+          {state.message}
+        </div>
+      )}
+      <div className={styles.tabs} role="tablist" aria-label="Tipo de operação">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={state.activeTab === 'deposit'}
+          className={`${styles.tab} ${state.activeTab === 'deposit' ? styles.tab_active : ''}`}
+          onClick={() => dispatch({ type: 'SET_TAB', tab: 'deposit' })}
+        >
+          Depósito
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={state.activeTab === 'transfer'}
+          className={`${styles.tab} ${state.activeTab === 'transfer' ? styles.tab_active : ''}`}
+          onClick={() => dispatch({ type: 'SET_TAB', tab: 'transfer' })}
+        >
+          Transferência
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={state.activeTab === 'reversal'}
+          className={`${styles.tab} ${state.activeTab === 'reversal' ? styles.tab_active : ''}`}
+          onClick={() => dispatch({ type: 'SET_TAB', tab: 'reversal' })}
+        >
+          Reversão
+        </button>
+      </div>
+      {state.activeTab === 'deposit' && (
       <section style={{ marginTop: 24 }}>
         <h2>Depósito</h2>
         <form onSubmit={handleDeposit}>
@@ -194,7 +247,9 @@ export default function OperacoesPage() {
           </FormField>
         </form>
       </section>
+      )}
 
+      {state.activeTab === 'transfer' && (
       <section>
         <h2>Transferência</h2>
         <form onSubmit={handleTransfer} className="">
@@ -224,7 +279,9 @@ export default function OperacoesPage() {
  
         </form>
       </section>
+      )}
 
+      {state.activeTab === 'reversal' && (
       <section>
         <h2>Reversão</h2>
         <form onSubmit={handleReversal}>
@@ -243,6 +300,7 @@ export default function OperacoesPage() {
           </FormField>
         </form>
       </section>
+      )}
     </div>
   );
 }
