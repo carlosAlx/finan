@@ -7,6 +7,7 @@ import LogoutButton from "@/components/LogoutButton";
 import { useReducer } from "react";
 import styles from './operacoes.module.css';
 import Link from "next/link";
+import { depositAction, transferAction, reversalAction } from "./actions";
 
 type State = {
   depositAmount: string;
@@ -104,14 +105,9 @@ export default function OperacoesPage() {
         return;
       }
       const amount = parseFloat(state.depositAmount);
-      const res = await fetch("/api/deposit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Falha no depósito");
-      dispatch({ type: "SET_MESSAGE", message: `Depósito OK. Novo saldo: ${(data.balanceCents ?? 0) / 100}`, kind: "success" });
+      const result = await depositAction(amount);
+      if (!result.ok) throw new Error(result.error || "Falha no depósito");
+      dispatch({ type: "SET_MESSAGE", message: `Depósito OK. Novo saldo: ${(result.balanceCents ?? 0) / 100}`, kind: "success" });
       dispatch({ type: "RESET_SECTION", section: "deposit" });
     } catch (err: any) {
       dispatch({ type: "SET_MESSAGE", message: err.message || "Erro inesperado no depósito", kind: "error" });
@@ -135,14 +131,9 @@ export default function OperacoesPage() {
         return;
       }
       const amount = parseFloat(state.transferAmount);
-      const res = await fetch("/api/transfer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toEmail: state.transferEmail, amount }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Falha na transferência");
-      dispatch({ type: "SET_MESSAGE", message: `Transferência OK. Novo saldo: ${(data.balanceCents ?? 0) / 100}`, kind: "success" });
+      const result = await transferAction(state.transferEmail, amount);
+      if (!result.ok) throw new Error(result.error || "Falha na transferência");
+      dispatch({ type: "SET_MESSAGE", message: `Transferência OK. Novo saldo: ${(result.balanceCents ?? 0) / 100}`, kind: "success" });
       dispatch({ type: "RESET_SECTION", section: "transfer" });
     } catch (err: any) {
       dispatch({ type: "SET_MESSAGE", message: err.message || "Erro inesperado na transferência", kind: "error" });
@@ -162,13 +153,8 @@ export default function OperacoesPage() {
         return;
       }
       const id = parseInt(state.reversalId, 10);
-      const res = await fetch("/api/reversal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transactionId: id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Falha na reversão");
+      const result = await reversalAction(id);
+      if (!result.ok) throw new Error(result.error || "Falha na reversão");
       dispatch({ type: "SET_MESSAGE", message: "Operação revertida com sucesso.", kind: "success" });
       dispatch({ type: "RESET_SECTION", section: "reversal" });
     } catch (err: any) {
