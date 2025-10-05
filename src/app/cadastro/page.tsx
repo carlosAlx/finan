@@ -1,12 +1,70 @@
+'use client';
 import { useState } from 'react';
+import { useRegister } from '@/hooks/useAuth';
+import { Button } from '@/components/Button/Button';
+import { Input } from '@/components/Input/Input';
+import { FormField } from '@/components/FormField/FormField';
+import '../globals.css';
+import styles from './cadastro.module.css';
+import { Eye, EyeSlash } from 'phosphor-react';
+import { useRouter } from 'next/navigation';
 
 export default function CadastroPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+  const [localError, setLocalError] = useState<string | null>(null);
+  const { register, loading, error } = useRegister();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const nameError = (() => {
+    const name = formData.name?.trim();
+    if (!name) return undefined;
+    if (name.length < 2) return 'Nome deve ter pelo menos 2 caracteres';
+    return undefined;
+  })();
+
+  const emailError = (() => {
+    const email = formData.email.trim();
+    if (!email) return undefined;
+    if (!emailRegex.test(email)) return 'Email inválido';
+    return undefined;
+  })();
+
+  const passwordError = (() => {
+    const password = formData.password.trim();
+    if (!password) return undefined;
+    if (password.length < 6) return 'Senha deve ter pelo menos 6 caracteres';
+    return undefined;
+  })();
+
+  const confirmError = (() => {
+    const password = formData.password.trim();
+    const confirmPassword = formData.confirmPassword.trim();
+    if (!confirmPassword) return undefined;
+    if (password !== confirmPassword) return 'As senhas não conferem';
+    return undefined;
+  })();
+
+  function validate(): string | null {
+    const name = formData.name?.trim();
+    const email = formData.email.trim();
+    const password = formData.password.trim();
+    const confirmPassword = formData.confirmPassword.trim();
+
+    if (!emailRegex.test(email)) return 'Email inválido';
+    if (password.length < 6) return 'Senha deve ter pelo menos 6 caracteres';
+    if (name && name.length > 0 && name.length < 2) return 'Nome deve ter pelo menos 2 caracteres';
+    if (password !== confirmPassword) return 'As senhas não conferem';
+    return null;
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -14,30 +72,116 @@ export default function CadastroPage() {
       [e.target.name]: e.target.value,
     });
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+    setLocalError(null);
+    const v = validate();
+    if (v) {
+      setLocalError(v);
+      return;
+    }
+    await register({
+      name: formData.name || undefined,
+      email: formData.email,
+      password: formData.password,
+    });
   };
 
   return (
-    <div>
+    <div className={styles.container_cadastro}>
+      <div className={styles.container_form}>
       <h1>Cadastro</h1>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="name">Nome:</label>
-        <input type="text" id="name" name="name" onChange={handleChange} />
-        <label htmlFor="email">Email:</label>
-        <input type="email" id="email" name="email" onChange={handleChange} />
-        <label htmlFor="password">Senha:</label>
-        <input type="password" id="password" name="password" onChange={handleChange} />
-        <label htmlFor="confirmPassword">Confirmar Senha:</label>
-        <input
-          type="password"
-          id="confirmPassword"
-          name="confirmPassword"
-          onChange={handleChange}
-        />
-        <button type="submit">Cadastrar</button>
+      <form onSubmit={handleSubmit} className="stack" noValidate>
+        <FormField id="name" label="Nome:" error={nameError}
+        >
+          <Input
+            type="text"
+            id="name"
+            name="name"
+            placeholder="Seu nome"
+            onChange={handleChange}
+            minLength={2}
+            invalid={Boolean(nameError)}
+          />
+        </FormField>
+
+        <FormField id="email" label="Email:" error={emailError}>
+          <Input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="email@email.com"
+            onChange={handleChange}
+            required
+            invalid={Boolean(emailError)}
+          />
+        </FormField>
+
+        <FormField id="password" label="Senha:" error={passwordError}>
+          <div className={styles.password_input}>
+            <Input
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              name="password"
+              placeholder="********"
+              onChange={handleChange}
+              minLength={6}
+              required
+              invalid={Boolean(passwordError)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            >
+              {showPassword ? <EyeSlash /> : <Eye />}
+            </button>
+          </div>
+        </FormField>
+
+        <FormField id="confirmPassword" label="Confirmar Senha:" error={confirmError}>
+          <div className={styles.password_input}>
+            <Input
+              type={showConfirm ? 'text' : 'password'}
+              id="confirmPassword"
+              name="confirmPassword"
+              placeholder="********"
+              onChange={handleChange}
+              minLength={6}
+              required
+              invalid={Boolean(confirmError)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              aria-label={showConfirm ? 'Ocultar confirmação' : 'Mostrar confirmação'}
+              title={showConfirm ? 'Ocultar confirmação' : 'Mostrar confirmação'}
+            >
+              {showConfirm ? <EyeSlash /> : <Eye />}
+            </button>
+          </div>
+        </FormField>
+        <Button
+          type="submit"
+          title="Cadastrar"
+          variant="primary"
+          disabled={
+            loading || Boolean(nameError || emailError || passwordError || confirmError)
+          }
+        >
+          {loading ? 'Cadastrando...' : 'Cadastrar'}
+        </Button>
+        <Button
+          type="button"
+          title="realizar login"
+          variant="secondary"
+          onClick={() => router.push('/login')}
+        >
+          Entrar
+        </Button>
       </form>
     </div>
+  </div>
   );
 }
