@@ -23,7 +23,7 @@ export function useLogin() {
         setError(data?.error || 'Falha no login');
         return { ok: false, data };
       }
-      router.push('/dashboard');
+      router.push('/operacoes');
       return { ok: true, data };
     } catch (e) {
       setError('Erro de rede');
