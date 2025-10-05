@@ -6,8 +6,10 @@ import { Eye, EyeSlash } from 'phosphor-react';
 import { Button } from '@/components/Button/Button';
 import { Input } from '@/components/Input/Input';
 import { FormField } from '@/components/FormField/FormField';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -60,10 +62,12 @@ export default function LoginPage() {
               </button>
             </div>
           </FormField>
-          <a href="/cadastro">cadastrar</a>
           {error && <p role="alert" className={styles.error}>{error}</p>}
           <Button aria-label="Login" type="submit" title="Login" variant="primary" disabled={loading}>
             {loading ? 'Entrando...' : 'Login'}
+          </Button>
+          <Button aria-label="Cadastrar" type="button" title="Cadastrar" variant="secondary" onClick={() => router.push('/cadastro')}>
+            Cadastrar
           </Button>
         </form>
       </div>
