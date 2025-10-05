@@ -1,0 +1,20 @@
+.container_operaceos{
+    margin: 24px auto;
+    padding: 16px;
+    max-width: 640px;
+}
+.container_operaceos h1{
+    font-size: 24px;
+    font-weight: 600;
+}
+.container_operaceos p{
+    font-size: 16px;
+    font-weight: 400;
+}
+.container_operaceos section{
+    margin-top: 24px;
+}
+.container_operaceos section h2{
+    font-size: 20px;
+    font-weight: 600;
+}
