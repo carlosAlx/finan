@@ -1,10 +1,11 @@
 'use client';
-import { use, useState } from 'react';
+import { useState } from 'react';
+import { useLogin } from '@/hooks/useAuth';
 import styles from './login.module.css';
 import { Eye, EyeSlash } from 'phosphor-react';
-import { Button } from '@/components/Button';
-import { Input } from '@/components/Input';
-import { FormField } from '@/components/FormField';
+import { Button } from '@/components/Button/Button';
+import { Input } from '@/components/Input/Input';
+import { FormField } from '@/components/FormField/FormField';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ export default function LoginPage() {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const { login, loading, error } = useLogin();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -20,9 +22,9 @@ export default function LoginPage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+    await login(formData);
   };
 
   return (
@@ -58,9 +60,10 @@ export default function LoginPage() {
               </button>
             </div>
           </FormField>
-          <a href="/cadastro">Cadastrar</a>
-          <Button aria-label="Login" type="submit" title="Login">
-            Login
+          <a href="/cadastro">cadastrar</a>
+          {error && <p role="alert" style={{ color: 'var(--color-danger-600)' }}>{error}</p>}
+          <Button aria-label="Login" type="submit" title="Login" variant="primary" disabled={loading}>
+            {loading ? 'Entrando...' : 'Login'}
           </Button>
         </form>
       </div>
