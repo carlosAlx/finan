@@ -61,7 +61,7 @@ export default function LoginPage() {
             </div>
           </FormField>
           <a href="/cadastro">cadastrar</a>
-          {error && <p role="alert" style={{ color: 'var(--color-danger-600)' }}>{error}</p>}
+          {error && <p role="alert" className={styles.error}>{error}</p>}
           <Button aria-label="Login" type="submit" title="Login" variant="primary" disabled={loading}>
             {loading ? 'Entrando...' : 'Login'}
           </Button>
