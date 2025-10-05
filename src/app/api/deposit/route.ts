@@ -17,13 +17,16 @@ export async function POST(request: Request) {
     }
 
     const amountCents = Math.round(parsed.data.amount * 100);
+    const freshUser = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!freshUser) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+    const incrementCents = freshUser.balanceCents < 0 ? amountCents + Math.abs(freshUser.balanceCents) : amountCents;
 
     await prisma.$transaction(async (tx) => {
-      await tx.user.update({ where: { id: user.id }, data: { balanceCents: { increment: amountCents } } });
+      await tx.user.update({ where: { id: user.id }, data: { balanceCents: { increment: incrementCents } } });
       await tx.transaction.create({
         data: {
           type: 'DEPOSIT',
-          amountCents,
+          amountCents: incrementCents,
           toUserId: user.id,
         },
       });
