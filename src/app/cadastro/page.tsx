@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useRegister } from '@/hooks/useAuth';
+import { registerAction } from '@/app/auth/actions';
 import { Button } from '@/components/Button/Button';
 import { Input } from '@/components/Input/Input';
 import { FormField } from '@/components/FormField/FormField';
@@ -19,7 +19,8 @@ export default function CadastroPage() {
   });
   const [message, setMessage] = useState<string>("");
   const [messageType, setMessageType] = useState<"success" | "error" | null>(null);
-  const { register, loading, error } = useRegister();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -83,19 +84,28 @@ export default function CadastroPage() {
       setMessageType("error");
       return;
     }
-    const result = await register({
-      name: formData.name || undefined,
-      email: formData.email,
-      password: formData.password,
-    });
-    if (!result?.ok) {
-      setMessage((result as any)?.data?.error || error || 'Falha no cadastro');
-      setMessageType("error");
-      return;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await registerAction({
+        name: formData.name || undefined,
+        email: formData.email,
+        password: formData.password,
+      });
+      if (!result.ok) {
+        setMessage(result.error || 'Falha no cadastro');
+        setMessageType('error');
+        return;
+      }
+      setMessage('Cadastro realizado com sucesso. Redirecionando para login...');
+      setMessageType('success');
+      setTimeout(() => router.push('/login'), 1200);
+    } catch {
+      setMessage('Erro inesperado');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
     }
-    setMessage("Cadastro realizado com sucesso. Redirecionando para login...");
-    setMessageType("success");
-    setTimeout(() => router.push('/login'), 1200);
   };
 
   return (

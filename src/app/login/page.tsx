@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useLogin } from '@/hooks/useAuth';
+import { loginAction } from '@/app/auth/actions';
 import styles from './login.module.css';
 import { Eye, EyeSlash } from 'phosphor-react';
 import { Button } from '@/components/Button/Button';
@@ -15,7 +15,8 @@ export default function LoginPage() {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
-  const { login, loading, error } = useLogin();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -26,7 +27,20 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(formData);
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await loginAction({ email: formData.email, password: formData.password });
+      if (!result.ok) {
+        setError(result.error || 'Falha no login');
+        return;
+      }
+      router.push('/operacoes');
+    } catch {
+      setError('Erro inesperado');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
